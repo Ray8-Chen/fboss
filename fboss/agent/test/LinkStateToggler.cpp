@@ -257,6 +257,18 @@ bool LinkStateToggler::waitForPortEventsOrSkipIfAlreadyInState(
     ensemble_->applyNewState(updateOperState);
   }
 
+  if (FLAGS_multi_switch) {
+    auto pollState = ensemble_->getProgrammedState();
+    for (const auto& portId : ports) {
+      auto operState =
+          pollState->getPorts()->getNodeIf(portId)->getOperState();
+      XLOG(WARNING) << "TOGGLER-DBG MULTI_SWITCH POLL-START port " << portId
+                    << " SwitchState OperState="
+                    << (operState == PortFields::OperState::UP ? "UP" : "DOWN")
+                    << " (desired " << (up ? "UP" : "DOWN") << ")";
+    }
+  }
+
   for (const auto& portId : ports) {
     WITH_RETRIES_N_TIMED(60, std::chrono::milliseconds(1000), {
       EXPECT_EVENTUALLY_EQ(
